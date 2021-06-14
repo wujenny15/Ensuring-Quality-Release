@@ -1,0 +1,317 @@
+{
+	"info": {
+		"_postman_id": "e9364553-dc92-46a6-b1ab-6b293f4e4e33",
+		"name": "Starter APIs Data Validation",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Create Employee",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "52b4ecec-eb0e-4e43-bdc0-9402689a51e3",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Successful response\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"success\");",
+							"});",
+							"",
+							"var json = pm.response.json();",
+							"pm.environment.set(\"id\", json.data.id);",
+							"",
+							"var name = pm.iterationData.get(\"name\")",
+							"var salary = pm.iterationData.get(\"salary\")",
+							"var age = pm.iterationData.get(\"age\")",
+							"// var name = \"John\"",
+							"// var salary = \"7000\"",
+							"// var age =\"26\"",
+							"",
+							"pm.test(\"Validata name equals. Expected: \" + json.data.name + \" , Actual: \" + name, function () {",
+							"    pm.expect(json.data.name).to.eq(name);",
+							"});",
+							"",
+							"pm.test(\"Validata salary equals. Expected: \" + json.data.salary + \" , Actual: \" + salary, function () {",
+							"    pm.expect(json.data.salary).to.eq(salary);",
+							"});",
+							"",
+							"pm.test(\"Validata age equals. Expected: \" + json.data.age + \" , Actual: \" + age, function () {",
+							"    pm.expect(parseInt(json.data.age)).to.eq(age);",
+							"});",
+							"",
+							"",
+							"console.log(pm.info.requestName);",
+							"",
+							"postman.setNextRequest(\"Get an Employee by Id\");"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "2203d486-0843-433b-afa9-1d58dc70664d",
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"{{name}}\",\n    \"salary\": \"{{salary}}\",\n    \"age\": \"{{age}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{envurl}}/create",
+					"host": [
+						"{{envurl}}"
+					],
+					"path": [
+						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get an Employee by Id",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "30e02c88-7d41-43df-b34f-49c84c42aa53",
+						"exec": [
+							"pm.test(\"Successful response\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"success\");",
+							"});",
+							"",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"The data should be null\", function () {",
+							"    let json = pm.response.json();",
+							"    pm.expect(json.data).to.eql(null);",
+							"});",
+							"",
+							"pm.test(\"The message should equals\", function () {",
+							"    let json = pm.response.json();",
+							"    pm.expect(json.message).to.eql(\"Successfully! Record has been fetched.\");",
+							"});",
+							"",
+							"console.log(pm.info.requestName);",
+							"postman.setNextRequest(\"Update an Employee by Id\");"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{envurl}}/employee/{{id}}",
+					"host": [
+						"{{envurl}}"
+					],
+					"path": [
+						"employee",
+						"{{id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update an Employee by Id",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "070c2536-a532-43b5-940b-5a661e60615f",
+						"exec": [
+							"pm.test(\"Successful response\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"success\");",
+							"});",
+							"",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"let json = pm.response.json();",
+							"var name = pm.iterationData.get(\"name\")",
+							"var salary = pm.iterationData.get(\"salary\")",
+							"var age = pm.iterationData.get(\"age\")",
+							"// var name = \"John\"",
+							"// var salary = \"7000\"",
+							"// var age =\"26\"",
+							"",
+							"pm.test(\"Validata name equals. Expected: \" + json.data.name + \" , Actual: \" + name, function () {",
+							"    pm.expect(json.data.name).to.eq(name);",
+							"});",
+							"",
+							"pm.test(\"Validata salary equals. Expected: \" + json.data.salary + \" , Actual: \" + salary, function () {",
+							"    pm.expect(parseInt(json.data.salary)).to.eq(salary);",
+							"});",
+							"",
+							"pm.test(\"Validata age equals. Expected: \" + json.data.age + \" , Actual: \" + age, function () {",
+							"    pm.expect(json.data.age).to.eq(age);",
+							"});",
+							"",
+							"pm.test(\"The message should equals\", function () {",
+							"    let json = pm.response.json();",
+							"    pm.expect(json.message).to.eql(\"Successfully! Record has been updated.\");",
+							"});",
+							"",
+							"console.log(pm.info.requestName);",
+							"postman.setNextRequest(\"Delete an Employee by Id\");"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"{{name}}\",\n    \"salary\": \"{{salary}}\",\n    \"age\": \"{{age}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{envurl}}/update/{{id}}",
+					"host": [
+						"{{envurl}}"
+					],
+					"path": [
+						"update",
+						"{{id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete an Employee by Id",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "563844ca-097c-42a6-bea7-2e93eb136049",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response message equals\", function () {",
+							"    let json = pm.response.json();",
+							"    pm.expect(json.message).to.eql(\"Successfully! Record has been deleted\");",
+							"});",
+							"",
+							"var id = pm.environment.get(\"id\")",
+							"pm.test(\"The test data equals\", function () {",
+							"    let json = pm.response.json();",
+							"    pm.expect(parseInt(json.data)).to.eql(id);",
+							"});",
+							"",
+							"",
+							"console.log(pm.info.requestName);",
+							"postman.setNextRequest(\"Get All Employees\");"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "id",
+						"value": "234",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{envurl}}/delete/{{id}}",
+					"host": [
+						"{{envurl}}"
+					],
+					"path": [
+						"delete",
+						"{{id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get All Employees",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "95a3cdc5-2762-424c-b169-f40f30fdb95a",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"let json = pm.response.json();",
+							"console.log(json.data[0]);",
+							"var id = pm.environment.get(\"id\")",
+							"",
+							"pm.test(\"Validata the id is not there\" , function () {",
+							"    var foundId= false",
+							"    for(var i=0; i<json.data.length; i++)",
+							"    {",
+							"       var employee = json.data[i];",
+							"       if(employee.id==id)",
+							"       {",
+							"           foundId= true;",
+							"       }",
+							"    }",
+							"    pm.expect(foundId).to.eq(false);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{envurl}}/employees",
+					"host": [
+						"{{envurl}}"
+					],
+					"path": [
+						"employees"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}

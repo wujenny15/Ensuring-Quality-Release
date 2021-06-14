@@ -1,0 +1,34 @@
+{
+	"id": "dc915732-3a87-4849-ab6d-aa853733ca5e",
+	"name": "Starter API",
+	"values": [
+		{
+			"key": "name",
+			"value": "John",
+			"enabled": true
+		},
+		{
+			"key": "salary",
+			"value": "7000",
+			"enabled": true
+		},
+		{
+			"key": "age",
+			"value": "26",
+			"enabled": true
+		},
+		{
+			"key": "id",
+			"value": "",
+			"enabled": true
+		},
+		{
+			"key": "envurl",
+			"value": "http://dummy.restapiexample.com/api/v1",
+			"enabled": true
+		}
+	],
+	"_postman_variable_scope": "environment",
+	"_postman_exported_at": "2020-12-18T01:10:06.480Z",
+	"_postman_exported_using": "Postman/7.36.0"
+}

@@ -1,0 +1,231 @@
+name: Azure Pipelines
+variables:
+  python.version: '3.7.6'
+  host: $(hostname)
+  terraformstroagerg: $(tstate)
+  terraformstorageaccount: $(tstatestorage)
+  terraformcontainer: tstate 
+  myPubKey: $(TERRAFORM_PUBLIC_KEY)
+  serviceConnection: $(serviceconnection)
+  terraformServiceConnection: $(tstateserviceconnection)
+  
+stages:
+- stage: Build
+  jobs:
+  - job: Build
+    pool:
+      name: Hosted Ubuntu 1604
+    steps:
+    - task: InstallSSHKey@0
+      displayName: 'Install SSH Key'
+      inputs:
+        knownHostsEntry: 'your hosts entry'
+        sshPublicKey: '$(myPubKey)'
+        sshKeySecureFile: 'id_rsa'
+    - task: TerraformInstaller@0
+      displayName: 'Install Terraform'
+      inputs:
+        terraformVersion: '0.13.5'
+    - task: TerraformTaskV1@0
+      displayName: 'Terraform Init'
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
+        backendServiceArm: '$(terraformServiceConnection)'
+        backendAzureRmResourceGroupName: '$(terraformstoragerg)'
+        backendAzureRmStorageAccountName: '$(terraformstorageaccount)'
+        backendAzureRmContainerName: '$(terraformcontainer)'
+        backendAzureRmKey: 'terraform.tfstate'
+    - task: TerraformTaskV1@0
+      displayName: 'Terraform Apply'
+      inputs:
+        provider: 'azurerm'
+        command: 'apply'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
+        commandOptions: '-auto-approve -var="public_key=$(myPubKey))"'
+        environmentServiceNameAzureRM: '$(terraformServiceConnection)'
+    - task: ArchiveFiles@2
+      displayName: 'Archive FakeRestAPI Web App'
+      inputs:
+        rootFolderOrFile: 'automatedtesting/jmeter/fakerestapi'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)-fakerestapi.zip'
+    - publish: $(Build.ArtifactStagingDirectory)/$(Build.BuildId)-fakerestapi.zip
+      displayName: 'Upload Fakerestapi Package'
+      artifact: drop-fakerestapi
+    - task: ArchiveFiles@2
+      displayName: 'Archive Selenium Tests'
+      inputs:
+        rootFolderOrFile: 'automatedtesting/selenium'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)-selenium.zip'
+    - publish: $(Build.ArtifactStagingDirectory)/$(Build.BuildId)-selenium.zip
+      displayName: 'Upload Selenium Package'
+      artifact: selenium
+
+- stage: Deploy
+  jobs:
+  - deployment: FakeRestAPI
+    displayName: 'Deploy Web App to APP Service'
+    pool:
+      vmImage: 'Ubuntu-16.04'
+    environment: 'TEST'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: AzureWebApp@1
+            displayName: 'Deploy CodingAPP to App Service'
+            inputs:
+              azureSubscription: '$(serviceConnection)'
+              appName: 'codingapp-appservice'
+              appType: webApp
+              package: $(Pipeline.Workspace)/drop-fakerestapi/$(Build.BuildId)-fakerestapi.zip
+  - deployment: VMDeploy
+    displayName: 'Deploy Virtual Machine'
+    environment:
+      name:  'DEV'
+      resourceType: VirtualMachine
+      tags: 'codingapp'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: Bash@3
+            inputs:
+              targetType: 'inline'
+              script: |
+                #! /bin/bash           
+                sudo apt-get upgrade -y
+                sudo apt-get install unzip -y
+                sudo apt-get install python3  -y
+                sudo apt-get update -y
+                sudo apt-get install python3-pip -y
+                sudo apt-get install -y chromium-browser
+                pip3 --version
+                pip3 install selenium
+                pip3 install --upgrade pip
+                export PATH=$PATH:'usr/bin'   
+          - task: ExtractFiles@1
+            displayName: 'Copy Selenium Archive to VM'
+            inputs:
+              archiveFilePatterns: '$(Agent.BuildDirectory)/selenium/$(Build.BuildId)-selenium.zip'
+              destinationFolder: '$(System.DefaultWorkingDirectory)/Selenium'
+              cleanDestinationFolder: true
+              overwriteExistingFiles: true
+          - task: Bash@3
+            displayName: 'Install Packages'
+            inputs:
+              targetType: 'inline'
+              script: 'pip3 install -r requirements.txt'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/Selenium'
+          - task: Bash@3
+            displayName: 'Create a Folder for logs'
+            inputs:
+              targetType: 'inline'
+              script: |
+                mkdir -p $(Agent.BuildDirectory)/vmlogs
+          - task: Bash@3
+            displayName: 'Run Selenium Python Tests'
+            inputs:
+              targetType: 'inline'
+              script: 'python3 login.py | tee -a $(Agent.BuildDirectory)/vmlogs/$(Build.BuildId)-log.txt'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/Selenium'   
+  - job: IntergrationTesting
+    displayName: 'Run Postman Data Validation API Test'
+    steps:
+    - checkout: self
+      clean: true
+    - task: CmdLine@2
+      displayName: 'Install Newman'
+      inputs:
+        script: >
+          sudo npm install -g newman
+        workingDirectory: $(System.DefaultWorkingDirectory)
+    - task: CmdLine@2
+      displayName: 'Run API Tests'
+      inputs:
+        script: >
+          newman run starterdata.json -d startertestdata.json -e starterenvironment.json --reporters cli,junit --reporter-junit-export junitReport.xml
+        workingDirectory: automatedtesting/postman
+        failOnStderr: true
+      continueOnError: true
+    - task: CopyFiles@2
+      displayName: 'Copy Test Results'
+      inputs:
+        SourceFolder: '$(System.DefaultWorkingDirectory)/automatedtesting/postman'
+        Contents: '**/*.xml'
+        TargetFolder: '$(build.artifactstagingdirectory)/automatedtesting/postman'
+    - task: PublishTestResults@2
+      displayName: 'Publish Test Results'
+      inputs:
+        testResultsFormat: 'JUnit'
+        testResultsFiles: '**/*.xml'
+        searchFolder: '$(System.DefaultWorkingDirectory)/automatedtesting/postman'
+  - job: IntergrationRegressopmTesting
+    displayName: 'Run Postman Regression API Test'
+    steps:
+    - checkout: self
+      clean: true
+    - task: CmdLine@2
+      displayName: 'Install Newman'
+      inputs:
+        script: >
+          sudo npm install -g newman
+        workingDirectory: $(System.DefaultWorkingDirectory)
+    - task: CmdLine@2
+      displayName: 'Run API Tests'
+      inputs:
+        script: >
+          newman run starterregression.json -d startertestdata.json -e starterenvironment.json --reporters cli,junit --reporter-junit-export junitReport.xml
+        workingDirectory: automatedtesting/postman
+        failOnStderr: true
+      continueOnError: true 
+    - task: CopyFiles@2
+      displayName: 'Copy Test Results'
+      inputs:
+        SourceFolder: '$(System.DefaultWorkingDirectory)/automatedtesting/postman'
+        Contents: '**/*.xml'
+        TargetFolder: '$(build.artifactstagingdirectory)/automatedtesting/postman'
+      continueOnError: true
+    - task: PublishTestResults@2
+      displayName: 'Publish Test Results'
+      inputs:
+        testResultsFormat: 'JUnit'
+        testResultsFiles: '**/*.xml'
+        searchFolder: '$(System.DefaultWorkingDirectory)/automatedtesting/postman'
+  - job: PerformanceEnduranceTesting
+    displayName: Run Endurance tests
+    steps:
+    - task: Bash@3
+      displayName: Execute JMeter Endurance tests
+      inputs:
+        targetType: filePath
+        filePath: '$(System.DefaultWorkingDirectory)/automatedtesting/jmeter/test.sh'
+        arguments: '$(System.DefaultWorkingDirectory)/automatedtesting/jmeter Endurance.jmx $(host)'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/automatedtesting/jmeter'
+        failOnStderr: false
+    - task: PublishPipelineArtifact@1
+      displayName: Publish JMeter Report
+      inputs:
+        targetPath: '$(System.DefaultWorkingDirectory)/automatedtesting/jmeter/report'
+        artifact: 'Jmeter Endurance Test Report'
+  - job: PerformanceStressTesting
+    displayName: Run Stress tests
+    steps:
+    - task: Bash@3
+      displayName: Execute JMeter Stress tests
+      inputs:
+        targetType: filePath
+        filePath: '$(System.DefaultWorkingDirectory)/automatedtesting/jmeter/test.sh'
+        arguments: '$(System.DefaultWorkingDirectory)/automatedtesting/jmeter Stress.jmx $(host)'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/automatedtesting/jmeter'
+        failOnStderr: false
+    - task: PublishPipelineArtifact@1
+      displayName: Publish JMeter Report
+      inputs:
+        targetPath: '$(System.DefaultWorkingDirectory)/automatedtesting/jmeter/report'
+        artifact: 'Jmeter Stress Test Report'

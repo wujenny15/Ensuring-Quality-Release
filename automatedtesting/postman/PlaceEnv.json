@@ -1,0 +1,34 @@
+{
+	"id": "dbfb8605-b5ee-4e73-8c08-e5c79a9d67a9",
+	"name": "PlaceEnv",
+	"values": [
+		{
+			"key": "id",
+			"value": "1",
+			"enabled": true
+		},
+		{
+			"key": "envurl",
+			"value": "https://jsonplaceholder.typicode.com",
+			"enabled": true
+		},
+		{
+			"key": "title",
+			"value": "BookC",
+			"enabled": true
+		},
+		{
+			"key": "body",
+			"value": "TV",
+			"enabled": true
+		},
+		{
+			"key": "userId",
+			"value": "21",
+			"enabled": true
+		}
+	],
+	"_postman_variable_scope": "environment",
+	"_postman_exported_at": "2020-12-17T02:23:41.382Z",
+	"_postman_exported_using": "Postman/7.36.0"
+}

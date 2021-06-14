@@ -1,0 +1,201 @@
+{
+	"info": {
+		"_postman_id": "14072d4b-d0c8-4253-9a85-70e1624d5fd2",
+		"name": "Place",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Get A Resource",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "0bf77864-42f8-4ba3-9978-c7274fcd62a1",
+						"exec": [
+							"console.log(pm.info.requestName);",
+							"",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response contains params\", function () {",
+							"    let json = pm.response.json();",
+							"    pm.expect(json.title).to.eq(\"sunt aut facere repellat provident occaecati excepturi optio reprehenderit\");",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{envurl}}/posts/1",
+					"host": [
+						"{{envurl}}"
+					],
+					"path": [
+						"posts",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create a resource",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "9b25bf35-ca86-49d9-9a90-7775dc852b32",
+						"exec": [
+							"pm.test(\"Status code is 201\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"var json = pm.response.json();",
+							"pm.environment.set(\"id\", json.id);",
+							"",
+							"var title = pm.iterationData.get(\"title\")",
+							"var body= pm.iterationData.get(\"body\")",
+							"var userId = pm.iterationData.get(\"userId\")",
+							"",
+							"",
+							"pm.test(\"Validata title, body, userId are equal\", function () {",
+							"    pm.expect(json.title).to.eq(title);",
+							"    pm.expect(json.body).to.eq(body);",
+							"    pm.expect(json.userId).to.eq(userId);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"title\": \"{{title}}\",\n    \"body\": \"{{body}}\",\n    \"userId\": {{userId}}\n  }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{envurl}}/posts",
+					"host": [
+						"{{envurl}}"
+					],
+					"path": [
+						"posts"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update a Resource",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "6444544f-fbe3-4f74-aabd-a658cd4eb3e1",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var json = pm.response.json();",
+							"",
+							"",
+							"var title = pm.iterationData.get(\"title\")",
+							"var body= pm.iterationData.get(\"body\")",
+							"var userId = pm.iterationData.get(\"userId\")",
+							"",
+							"pm.test(\"Validata title, body, userId are equal\", function () {",
+							"    pm.expect(json.title).to.eq(title);",
+							"    pm.expect(json.body).to.eq(body);",
+							"    pm.expect(parseInt(json.userId)).to.eq(userId);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"id\": \"1\",\n    \"title\": \"{{title}}\",\n    \"body\": \"{{body}}\",\n    \"userId\": \"{{userId}}\"\n  }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{envurl}}/posts/1",
+					"host": [
+						"{{envurl}}"
+					],
+					"path": [
+						"posts",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete a Resource",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "db9f1cca-f018-4641-be1b-fa971b3e65f4",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Body is empty\", function () {",
+							"    pm.response.to.have.body(\"{}\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{envurl}}/posts/{{id}}",
+					"host": [
+						"{{envurl}}"
+					],
+					"path": [
+						"posts",
+						"{{id}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}
